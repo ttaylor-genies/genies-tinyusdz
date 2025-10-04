@@ -550,19 +550,18 @@ bool CompositeSublayersRec(AssetResolutionResolver &resolver,
     // TODO: subLayerOffset
     std::string sublayer_asset_path = layer.assetPath.GetAssetPath();
 
-    // Do cyclic referencing check.
-    // TODO: Use resolved name?
-    if (IsVisited(layer_names_stack, sublayer_asset_path)) {
-      PUSH_ERROR_AND_RETURN(
-          fmt::format("Circular referenceing detected for subLayer: {} in {}",
-                      sublayer_asset_path, in_layer.name()));
-    }
-
     std::string layer_filepath = resolver.resolve(sublayer_asset_path);
     if (layer_filepath.empty()) {
       PUSH_ERROR_AND_RETURN(fmt::format("{} not found in path: {}",
                                         sublayer_asset_path,
                                         resolver.search_paths_str()));
+    }
+
+    // Check if we've already visited this resolved file path
+    if (IsVisited(layer_names_stack, layer_filepath)) {
+      PUSH_ERROR_AND_RETURN(
+          fmt::format("Circular referencing detected for subLayer: {} (resolved to: {}) in {}",
+                      sublayer_asset_path, layer_filepath, in_layer.name()));
     }
 
     tinyusdz::Layer sublayer;
@@ -577,8 +576,8 @@ bool CompositeSublayersRec(AssetResolutionResolver &resolver,
           fmt::format("Load asset in subLayer failed: `{}`", layer.assetPath));
     }
 
-    // Store normalized path to avoid false circular reference detections
-    curr_layer_names.insert(NormalizePath(sublayer_asset_path));
+    // Store resolved path to track actual files visited
+    curr_layer_names.insert(layer_filepath);
 
     // Recursively load subLayer
     if (!CompositeSublayersRec(resolver, sublayer, layer_names_stack,
