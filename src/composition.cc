@@ -78,11 +78,23 @@ RECONSTRUCT_PRIM_DECL(Shader);
 
 namespace {
 
+// Normalize path by removing leading "./"
+std::string NormalizePath(const std::string &path) {
+  if (path.size() >= 2 && path[0] == '.' && path[1] == '/') {
+    return path.substr(2);
+  }
+  return path;
+}
+
 bool IsVisited(const std::vector<std::set<std::string>> layer_names_stack,
                const std::string &name) {
+  std::string normalized_name = NormalizePath(name);
+
   for (size_t i = 0; i < layer_names_stack.size(); i++) {
-    if (layer_names_stack[i].count(name)) {
-      return true;
+    for (const auto &visited : layer_names_stack[i]) {
+      if (NormalizePath(visited) == normalized_name) {
+        return true;
+      }
     }
   }
   return false;
