@@ -564,6 +564,10 @@ bool CompositeSublayersRec(AssetResolutionResolver &resolver,
                       sublayer_asset_path, layer_filepath, in_layer.name()));
     }
 
+    std::string indent(layer_names_stack.size() * 2, ' ');
+    DCOUT(indent << "[Depth " << layer_names_stack.size() << "] Loading sublayer: "
+          << sublayer_asset_path << " -> " << layer_filepath);
+
     tinyusdz::Layer sublayer;
     if (!LoadAsset(resolver, in_layer.get_current_working_path(),
                    in_layer.get_asset_search_paths(), options.fileformats,
@@ -576,14 +580,21 @@ bool CompositeSublayersRec(AssetResolutionResolver &resolver,
           fmt::format("Load asset in subLayer failed: `{}`", layer.assetPath));
     }
 
+    DCOUT(indent << "[Depth " << layer_names_stack.size() << "] Loaded "
+          << sublayer.primspecs().size() << " primspecs from " << layer_filepath);
+
     // Store resolved path to track actual files visited
     curr_layer_names.insert(layer_filepath);
 
     // Recursively load subLayer
+    DCOUT(indent << "[Depth " << layer_names_stack.size() << "] Recursing into sublayer: "
+          << layer_filepath);
     if (!CompositeSublayersRec(resolver, sublayer, layer_names_stack,
                                composited_layer, warn, err, options)) {
       return false;
     }
+    DCOUT(indent << "[Depth " << layer_names_stack.size() << "] Finished compositing: "
+          << layer_filepath);
   }
 
   layer_names_stack.pop_back();
