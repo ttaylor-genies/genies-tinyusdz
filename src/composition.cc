@@ -577,7 +577,8 @@ bool CompositeSublayersRec(AssetResolutionResolver &resolver,
           fmt::format("Load asset in subLayer failed: `{}`", layer.assetPath));
     }
 
-    curr_layer_names.insert(sublayer_asset_path);
+    // Store normalized path to avoid false circular reference detections
+    curr_layer_names.insert(NormalizePath(sublayer_asset_path));
 
     // Recursively load subLayer
     if (!CompositeSublayersRec(resolver, sublayer, layer_names_stack,
